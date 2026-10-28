@@ -1,0 +1,48 @@
+# Secrets and environment files
+.env
+.env.*
+!.env.example
+
+# Python
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+
+# Test and coverage artifacts
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Editors and operating system
+.DS_Store
+.idea/
+.vscode/
+EOFcat > services/api/.gitignore <<'EOF'
+# Secrets and environment files
+.env
+.env.*
+!.env.example
+
+# Python
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+
+# Test and coverage artifacts
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Editors and operating system
+.DS_Store
+.idea/
+.vscode/
+.venv/
