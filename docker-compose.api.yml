@@ -1,0 +1,21 @@
+name: zthynk-api
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: zthynk-api
+    env_file:
+      - .env
+      - .env.docker
+    ports:
+      - "3130:3130"
+    networks:
+      - zthynk-network
+    restart: unless-stopped
+
+networks:
+  zthynk-network:
+    external: true
+    name: zthynk-network
