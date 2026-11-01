@@ -1,14 +1,18 @@
+
+from __future__ import annotations
+
 from uuid import UUID, uuid4
 
 from sqlalchemy import (
     Boolean,
-    ForeignKey,
+    ForeignKeyConstraint,
     Integer,
     Numeric,
     UniqueConstraint,
     Uuid,
+    and_,
 )
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.orm import Mapped, mapped_column, relationship, foreign
 
 from app.database.base import Base
 from app.db_models.business import Business
@@ -24,6 +28,16 @@ class BusinessService(Base):
             "service_id",
             name="uq_business_services_business_service",
         ),
+        ForeignKeyConstraint(
+            ["business_id", "organization_id"],
+            ["businesses.id", "businesses.organization_id"],
+            name="fk_business_services_business_organization",
+        ),
+        ForeignKeyConstraint(
+            ["service_id", "organization_id"],
+            ["services.id", "services.organization_id"],
+            name="fk_business_services_service_organization",
+        ),
     )
 
     id: Mapped[UUID] = mapped_column(
@@ -33,12 +47,17 @@ class BusinessService(Base):
     )
 
     business_id: Mapped[UUID] = mapped_column(
-        ForeignKey("businesses.id"),
+        Uuid,
         nullable=False,
     )
 
     service_id: Mapped[UUID] = mapped_column(
-        ForeignKey("services.id"),
+        Uuid,
+        nullable=False,
+    )
+
+    organization_id: Mapped[UUID] = mapped_column(
+        Uuid,
         nullable=False,
     )
 
@@ -57,10 +76,19 @@ class BusinessService(Base):
         default=True,
         nullable=False,
     )
+
     business: Mapped["Business"] = relationship(
         back_populates="services",
+        primaryjoin=lambda: and_(
+            Business.id == foreign(BusinessService.business_id),
+            Business.organization_id == BusinessService.organization_id,
+        ),
     )
 
     service: Mapped["Service"] = relationship(
         back_populates="businesses",
+        primaryjoin=lambda: and_(
+            Service.id == foreign(BusinessService.service_id),
+            Service.organization_id == BusinessService.organization_id,
+        ),
     )

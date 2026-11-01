@@ -86,6 +86,7 @@ def create_business_service(
     association = BusinessService(
         business_id=business.id,
         service_id=service.id,
+        organization_id=organization_id,
         price=association_data.price,
         duration_minutes=association_data.duration_minutes,
         active=association_data.active,

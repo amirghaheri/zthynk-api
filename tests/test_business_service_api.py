@@ -1,10 +1,13 @@
-from app.auth.dependencies import get_current_user
+import pytest
+from sqlalchemy.exc import IntegrityError
+
+from app.main import app
 from app.db_models.business import Business
 from app.db_models.business_service import BusinessService
 from app.db_models.organization import Organization
 from app.db_models.service import Service
 from app.db_models.user import User
-from app.main import app
+from app.auth.dependencies import get_current_user
 
 
 def test_user_cannot_associate_another_organizations_service(
@@ -84,10 +87,12 @@ def test_list_business_services_only_returns_own_business(
             BusinessService(
                 business_id=business_a.id,
                 service_id=service_a.id,
+                organization_id=organization_a.id,
             ),
             BusinessService(
                 business_id=business_b.id,
                 service_id=service_b.id,
+                organization_id=organization_b.id,
             ),
         ]
     )
@@ -146,6 +151,7 @@ def test_user_cannot_update_another_organizations_association(
     association_b = BusinessService(
         business_id=business_b.id,
         service_id=service_b.id,
+        organization_id=organization_b.id,
         price=50,
     )
     db_session.add(association_b)
@@ -200,6 +206,7 @@ def test_user_cannot_delete_another_organizations_association(
     association_b = BusinessService(
         business_id=business_b.id,
         service_id=service_b.id,
+        organization_id=organization_b.id,
     )
     db_session.add(association_b)
     db_session.flush()
@@ -221,3 +228,47 @@ def test_user_cannot_delete_another_organizations_association(
         BusinessService, association_id
     )
     assert remaining_association is not None
+
+
+def test_database_rejects_cross_organization_business_service(
+    db_session,
+):
+    # Create two separate organizations.
+    organization_a = Organization(
+        name="Database Security Tenant A",
+    )
+    organization_b = Organization(
+        name="Database Security Tenant B",
+    )
+
+    db_session.add_all([organization_a, organization_b])
+    db_session.flush()
+
+    # Business belongs to Organization A.
+    business_a = Business(
+        name="Tenant A Business",
+        organization_id=organization_a.id,
+    )
+
+    # Service belongs to Organization B.
+    service_b = Service(
+        name="Tenant B Service",
+        organization_id=organization_b.id,
+    )
+
+    db_session.add_all([business_a, service_b])
+    db_session.flush()
+
+    # Attempt to associate Organization A's business
+    # with Organization B's service.
+    invalid_association = BusinessService(
+        business_id=business_a.id,
+        service_id=service_b.id,
+        organization_id=organization_a.id,
+    )
+
+    # PostgreSQL must reject this invalid association.
+    with pytest.raises(IntegrityError):
+        with db_session.begin_nested():
+            db_session.add(invalid_association)
+            db_session.flush()
